@@ -74,7 +74,7 @@ public class AppEngineEmbeddedContainer implements DeployableContainer
          {
             try
             {
-               // TODO -- does this make any sense?
+               // TODO -- does this make any sense -- see AppEngine SecurityManagerInstaller?
                AppEngineSetup.addToJavaExtDirs("org.apache.maven.surefire.booter.SurefireBooter");
                AppEngineSetup.addToJavaExtDirs("org.jboss.arquillian.junit.Arquillian");
                AppEngineSetup.addToJavaExtDirs("org.jboss.arquillian.testng.Arquillian");
