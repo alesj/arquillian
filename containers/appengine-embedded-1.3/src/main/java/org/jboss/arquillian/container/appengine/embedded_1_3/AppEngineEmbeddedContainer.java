@@ -65,7 +65,28 @@ public class AppEngineEmbeddedContainer implements DeployableContainer
    public ContainerMethodExecutor deploy(Context context, final Archive<?> archive) throws DeploymentException
    {
       // add a GAE libs
-      AppEngineSetup.prepare(archive);            
+      AppEngineSetup.prepare(archive);
+
+      // extend java.ext.dirs
+      AccessController.doPrivileged(new PrivilegedAction<Object>()
+      {
+         public Object run()
+         {
+            try
+            {
+               // TODO -- does this make any sense?
+               AppEngineSetup.addToJavaExtDirs("org.apache.maven.surefire.booter.SurefireBooter");
+               AppEngineSetup.addToJavaExtDirs("org.jboss.arquillian.junit.Arquillian");
+               AppEngineSetup.addToJavaExtDirs("org.jboss.arquillian.testng.Arquillian");
+               AppEngineSetup.addToJavaExtDirs(getClass());
+               return null;
+            }
+            catch (Exception e)
+            {
+               throw new RuntimeException(e);
+            }
+         }
+      });
 
       ExplodedExporter exporter = archive.as(ExplodedExporter.class);
       final File appLocation = exporter.exportExploded(

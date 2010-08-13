@@ -23,6 +23,9 @@
 package org.jboss.arquillian.container.appengine.embedded_1_3;
 
 import java.io.File;
+import java.net.URL;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.util.logging.Logger;
 
 import org.jboss.arquillian.container.appengine.embedded_1_3.hack.AppEngineHack;
@@ -48,6 +51,50 @@ class AppEngineSetup
    private static final String[] FILES = {
          "appengine-api-1.0-sdk",
    };
+
+   /**
+    * Add class owner location to java.ext.dirs.
+    * This method should be invoked in privileged block.
+    *
+    * @param className the class name
+    */
+   static void addToJavaExtDirs(String className)
+   {
+      try
+      {
+         ClassLoader cl = ClassLoader.getSystemClassLoader();
+         addToJavaExtDirs(cl.loadClass(className));
+      }
+      catch (Throwable ignored)
+      {
+      }
+   }
+
+   /**
+    * Add class owner location to java.ext.dirs.
+    * This method should be invoked in privileged block.
+    *
+    * @param clazz the class
+    */
+   static void addToJavaExtDirs(Class<?> clazz)
+   {
+      if (clazz == null)
+         throw new IllegalArgumentException("Null class");
+
+      ProtectionDomain domain = clazz.getProtectionDomain();
+      CodeSource source = domain.getCodeSource();
+      URL location = source.getLocation();
+      String addon = location.getPath();
+      String ext = System.getProperty("java.ext.dirs");
+      if (ext == null)
+      {
+         System.setProperty("java.ext.dirs", addon);
+      }
+      else
+      {
+         System.setProperty("java.ext.dirs", ext + File.pathSeparator + addon);
+      }
+   }
 
    /**
     * Prepare AppEngine libs.
