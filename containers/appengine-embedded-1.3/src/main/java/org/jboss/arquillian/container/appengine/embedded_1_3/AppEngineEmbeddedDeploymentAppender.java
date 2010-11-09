@@ -40,7 +40,7 @@ public class AppEngineEmbeddedDeploymentAppender implements AuxiliaryArchiveAppe
 {
    public Archive<?> createAuxiliaryArchive()
    {
-      JavaArchive archive = ShrinkWrap.create(JavaArchive.class, "arquillian-appengine-testenrichers.jar")
+      return ShrinkWrap.create(JavaArchive.class, "arquillian-appengine-testenrichers.jar")
                         .addPackages(
                               false,
                               CDIInjectionEnricher.class.getPackage(),
@@ -49,7 +49,6 @@ public class AppEngineEmbeddedDeploymentAppender implements AuxiliaryArchiveAppe
                               TestEnricher.class,
                               CDIInjectionEnricher.class,
                               ResourceInjectionEnricher.class);
-      return archive;
    }
 }
 

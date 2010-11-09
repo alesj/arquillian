@@ -46,7 +46,7 @@ class AppEngineSetup
                ".m2" + File.separatorChar + "repository";
 
    private static final String GROUP_ID = "com.google.appengine";
-   private static final String VERSION = "1.3.5";
+   private static final String VERSION = "1.3.7";
 
    private static final String[] FILES = {
          "appengine-api-1.0-sdk",
