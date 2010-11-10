@@ -23,12 +23,15 @@
 package org.jboss.arquillian.container.appengine.embedded_1_3;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.jboss.arquillian.container.appengine.embedded_1_3.hack.AppEngineHack;
 import org.jboss.arquillian.protocol.servlet_3.ServletMethodExecutor;
@@ -41,6 +44,7 @@ import org.jboss.arquillian.spi.LifecycleException;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.exporter.ExplodedExporter;
 
+import com.google.appengine.repackaged.com.google.common.io.Files;
 import com.google.appengine.tools.development.AppContext;
 import com.google.appengine.tools.development.DevAppServer;
 import com.google.appengine.tools.development.DevAppServerFactory;
@@ -52,9 +56,11 @@ import com.google.appengine.tools.development.DevAppServerFactory;
  */
 public class AppEngineEmbeddedContainer implements DeployableContainer
 {
+   private static final Logger log = Logger.getLogger(AppEngineEmbeddedContainer.class.getName());
    public static final String HTTP_PROTOCOL = "http";
 
    private AppEngineEmbeddedConfiguration containerConfig;
+   private File appLocation;
    private DevAppServer server;
 
    public void setup(Context context, Configuration configuration)
@@ -68,7 +74,7 @@ public class AppEngineEmbeddedContainer implements DeployableContainer
       AppEngineSetup.prepare(archive);
 
       ExplodedExporter exporter = archive.as(ExplodedExporter.class);
-      final File appLocation = exporter.exportExploded(
+      appLocation = exporter.exportExploded(
             AccessController.doPrivileged(new PrivilegedAction<File>()
             {
                public File run()
@@ -77,7 +83,6 @@ public class AppEngineEmbeddedContainer implements DeployableContainer
                }
             })
       );
-      appLocation.deleteOnExit();
 
       try
       {
@@ -93,12 +98,25 @@ public class AppEngineEmbeddedContainer implements DeployableContainer
          //noinspection unchecked
          server.setServiceProperties(properties);
          server.start();
+      }
+      catch (Exception e)
+      {
+         server = null;
+         deleteAppLocation();
 
+         throw new DeploymentException("Error starting AppEngine.", e);
+      }
+
+      try
+      {
          setup("start", appLocation, containerConfig.getBindHttpPort(), containerConfig.getBindAddress());
       }
       catch (Exception e)
       {
-         throw new DeploymentException("Error starting AppEngine.", e);
+         shutdownServer();
+         deleteAppLocation();
+
+         throw new DeploymentException("Cannot setup GAE Api Environment", e);
       }
 
       try
@@ -112,7 +130,11 @@ public class AppEngineEmbeddedContainer implements DeployableContainer
       }
       catch (Exception e)
       {
-         throw new RuntimeException("Could not create ContainerMethodExecutor", e);
+         teardown();
+         shutdownServer();
+         deleteAppLocation();
+
+         throw new DeploymentException("Could not create ContainerMethodExecutor", e);
       }
    }
 
@@ -142,16 +164,40 @@ public class AppEngineEmbeddedContainer implements DeployableContainer
 
    public void undeploy(Context context, Archive<?> archive) throws DeploymentException
    {
-      if (server == null)
+      teardown();
+      shutdownServer();
+      deleteAppLocation();      
+   }
+
+   /**
+    * Delete app location.
+    */
+   private void deleteAppLocation()
+   {
+      if (appLocation == null)
          return;
 
       try
       {
-         setup("stop");
+         deleteRecursively(appLocation);
       }
-      catch (Exception ignored)
+      catch (IOException e)
       {
+         log.log(Level.WARNING, "Cannot delete app location.", e);
       }
+      finally
+      {
+         appLocation = null;
+      }
+   }
+
+   /**
+    * Shutdown server.
+    */
+   private void shutdownServer()
+   {
+      if (server == null)
+         return;
 
       try
       {
@@ -159,11 +205,25 @@ public class AppEngineEmbeddedContainer implements DeployableContainer
       }
       catch (Exception e)
       {
-         throw new DeploymentException("Error shutting down AppEngine", e);
+         log.log(Level.SEVERE, "Error shutting down AppEngine", e);
       }
       finally
       {
          server = null;
+      }
+   }
+
+   /**
+    * Teardown GAE Api Env.
+    */
+   private void teardown()
+   {
+      try
+      {
+         setup("stop");
+      }
+      catch (Exception ignored)
+      {
       }
    }
 
@@ -173,5 +233,28 @@ public class AppEngineEmbeddedContainer implements DeployableContainer
 
    public void stop(Context context) throws LifecycleException
    {
+   }
+
+   static void deleteRecursively(File file) throws IOException
+   {
+      if (file.isDirectory())
+         deleteDirectoryContents(file);
+
+      if (file.delete() == false)
+      {
+         throw new IOException("Failed to delete " + file);
+      }
+   }
+
+   static void deleteDirectoryContents(File directory) throws IOException
+   {
+      File[] files = directory.listFiles();
+      if (files == null)
+         throw new IOException("Error listing files for " + directory);
+
+      for (File file : files)
+      {
+         deleteRecursively(file);
+      }
    }
 }
