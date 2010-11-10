@@ -44,7 +44,6 @@ import org.jboss.arquillian.spi.LifecycleException;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.exporter.ExplodedExporter;
 
-import com.google.appengine.repackaged.com.google.common.io.Files;
 import com.google.appengine.tools.development.AppContext;
 import com.google.appengine.tools.development.DevAppServer;
 import com.google.appengine.tools.development.DevAppServerFactory;
