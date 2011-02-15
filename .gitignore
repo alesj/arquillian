@@ -12,6 +12,8 @@ build/.project
 build/.settings
 bundle/.classpath
 bundle/target
+containers/appengine-embedded-1.3/.idea/
+containers/appengine-embedded-1.3/target
 containers/glassfish-embedded-3/target
 containers/glassfish-remote-3/target
 containers/jbossas-embedded-6/target
@@ -79,4 +81,7 @@ testenrichers/osgi/target
 testenrichers/resource/.classpath
 testenrichers/resource/target
 testng/target
+*.iml
+*.ipr
+*.iws
 
