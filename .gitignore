@@ -1,3 +1,4 @@
+.idea
 .project
 .settings/
 .classpath
@@ -44,6 +45,7 @@ examples/junit/.project
 examples/junit/.settings
 examples/junit/target
 examples/testng/target
+extensions/performance/arq-perf/
 frameworks/jsfunit/target
 impl-base/.classpath
 impl-base/.project
